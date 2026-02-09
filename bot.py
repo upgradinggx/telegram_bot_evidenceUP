@@ -2,45 +2,19 @@ import os
 import json
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
-import gspread
 from google.oauth2.service_account import Credentials
+import gspread
 
-# ===== Setup Google Sheets API =====
+# Setup Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+SERVICE_ACCOUNT_JSON = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
+creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_JSON, scopes=SCOPES)
+gc = gspread.authorize(creds)
 
-try:
-    SERVICE_ACCOUNT_JSON = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
-except Exception as e:
-    print("❌ Error membaca SERVICE_ACCOUNT_JSON:", e)
-    SERVICE_ACCOUNT_JSON = None
-
-creds = None
-gc = None
-if SERVICE_ACCOUNT_JSON:
-    try:
-        creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_JSON, scopes=SCOPES)
-        gc = gspread.authorize(creds)
-    except Exception as e:
-        print("❌ Error authorize gspread:", e)
-
-# ===== Spreadsheet ID =====
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
-if not SPREADSHEET_ID:
-    print("❌ SPREADSHEET_ID environment variable tidak ditemukan")
-
-spreadsheet = None
-if gc and SPREADSHEET_ID:
-    try:
-        spreadsheet = gc.open_by_key(SPREADSHEET_ID)
-    except Exception as e:
-        print("❌ Error membuka spreadsheet:", e)
-
-# ===== Telegram Bot Token =====
+spreadsheet = gc.open_by_key(SPREADSHEET_ID)
 TOKEN = os.environ.get("BOT_TOKEN")
-if not TOKEN:
-    print("❌ BOT_TOKEN environment variable tidak ditemukan")
 
-# ===== Handler Pesan =====
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
@@ -53,46 +27,41 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     peristiwa = data.get("peristiwa", "-")
     sub_divisi = data.get("sub divisi", "Project").capitalize()
+    if sub_divisi not in ["Patrol", "Operational", "Project"]:
+        sub_divisi = "Project"
     area = data.get("area", "-")
+    tikor = data.get("tikor", "-")
     catatan = data.get("catatan", "-")
+    nama_pengirim = data.get("nama pengirim", update.message.from_user.full_name)
+    username = update.message.from_user.username or "-"
+    tanggal = update.message.date.strftime("%d/%m/%Y")
 
-    # Debug info
-    print("💬 Pesan diterima:", text)
-    print("📂 Sub Divisi:", sub_divisi)
-    print("🗂 Target spreadsheet:", SPREADSHEET_ID)
+    # Ambil worksheet sesuai Sub Divisi
+    try:
+        worksheet = spreadsheet.worksheet(sub_divisi)
+    except gspread.WorksheetNotFound:
+        worksheet = spreadsheet.add_worksheet(title=sub_divisi, rows="100", cols="20")
 
-    reply = f"📌 LAPORAN DITERIMA\nPeristiwa: {peristiwa}\nSub Divisi: {sub_divisi}\nArea: {area}\nCatatan: {catatan}"
+    # Row data
+    row = [peristiwa, sub_divisi, area, tikor, catatan, nama_pengirim, username, tanggal]
 
-    if spreadsheet:
-        try:
-            # Pastikan worksheet/tab ada
-            try:
-                worksheet = spreadsheet.worksheet(sub_divisi)
-            except gspread.WorksheetNotFound:
-                print(f"ℹ️ Worksheet '{sub_divisi}' tidak ditemukan, membuat baru")
-                worksheet = spreadsheet.add_worksheet(title=sub_divisi, rows="100", cols="10")
+    worksheet.append_row(row)
 
-            # Ambil tanggal
-            tanggal = update.message.date.strftime("%d/%m/%Y")
-
-            # Row data
-            row = [peristiwa, area, catatan, tanggal]
-            print("📊 Row akan ditulis:", row)
-
-            worksheet.append_row(row)
-            reply += f"\nTanggal: {tanggal}\nStatus & File bisa diisi manual di Sheet."
-
-        except Exception as e:
-            print("❌ Error append row:", e)
-            reply += f"\n❌ Gagal menulis ke Sheet: {e}"
-
-    else:
-        reply += "\n❌ Spreadsheet tidak tersedia atau belum terhubung."
+    reply = (
+        "📌 LAPORAN DITERIMA\n\n"
+        f"Peristiwa: {peristiwa}\n"
+        f"Sub Divisi: {sub_divisi}\n"
+        f"Area: {area}\n"
+        f"Tikor: {tikor}\n"
+        f"Catatan: {catatan}\n"
+        f"Nama Pengirim: {nama_pengirim}\n"
+        f"Username: {username}\n"
+        f"Tanggal: {tanggal}\n\n"
+        "Tercatat di Google Sheet."
+    )
 
     await update.message.reply_text(reply)
 
-# ===== Jalankan bot =====
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-print("✅ Bot dijalankan...")
 app.run_polling()
