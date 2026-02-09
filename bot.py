@@ -1,26 +1,26 @@
 import os
+import json
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
-from google.oauth2.service_account import Credentials
 import gspread
+from google.oauth2.service_account import Credentials
 
-# Setup Google Sheets API
+# Google Sheets API setup
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SERVICE_ACCOUNT_FILE = 'service_account.json'  # nanti file ini harus di-upload ke Render
-
-creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+SERVICE_ACCOUNT_JSON = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
+creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_JSON, scopes=SCOPES)
 gc = gspread.authorize(creds)
 
-# Spreadsheet ID: dapat dari URL Google Sheet kamu
-SPREADSHEET_ID = os.environ.get("1_0ulnjGWv6EiqZA1qxwzJTvrtWhP-dtM6HMo4bvCPtY")
+# Spreadsheet ID from env variable
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
 spreadsheet = gc.open_by_key(SPREADSHEET_ID)
 
+# Telegram bot token from env variable
 TOKEN = os.environ.get("BOT_TOKEN")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
-    # Parse pesan jadi dictionary
     data = {}
     for line in text.split("\n"):
         if ":" in line:
@@ -28,26 +28,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             data[key.strip().lower()] = value.strip()
 
     peristiwa = data.get("peristiwa", "-")
-    sub_divisi = data.get("sub divisi", "Project").capitalize()  # default ke Project kalau kosong
+    sub_divisi = data.get("sub divisi", "Project").capitalize()
     area = data.get("area", "-")
     catatan = data.get("catatan", "-")
 
-    # Tentukan sheet berdasarkan Sub Divisi
     if sub_divisi not in ["Patrol", "Operational", "Project"]:
         sub_divisi = "Project"
 
     try:
         worksheet = spreadsheet.worksheet(sub_divisi)
     except gspread.WorksheetNotFound:
-        # Kalau sheet belum ada, buat baru
         worksheet = spreadsheet.add_worksheet(title=sub_divisi, rows="100", cols="10")
 
-    # Ambil tanggal pesan diterima, format dd/mm/yyyy
     tanggal = update.message.date.strftime("%d/%m/%Y")
-
-    # Data yang akan ditambahkan (Peristiwa, Area, Catatan, Tanggal)
     row = [peristiwa, area, catatan, tanggal]
-
     worksheet.append_row(row)
 
     reply = (
@@ -59,7 +53,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Tanggal: {tanggal}\n\n"
         "Status & File bisa diisi manual di Google Sheet."
     )
-
     await update.message.reply_text(reply)
 
 app = ApplicationBuilder().token(TOKEN).build()
