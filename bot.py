@@ -67,7 +67,7 @@ async def format_laporan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Silakan kirim laporan dengan format berikut:\n\n"
         "Peristiwa:\n"
         "Sub Divisi:\n"
-        "Kabupaten:\n"
+        "Area:\n"
         "Tikor:\n"
         "Catatan:\n\n"
         "📌 Sub Divisi: pilih satu Patrol / Operational / Project\n"
@@ -89,7 +89,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             data[key.strip().lower()] = value.strip()
 
     # VALIDASI WAJIB
-    if "peristiwa" not in data or "kabupaten" not in data:
+    if "peristiwa" not in data or "area" not in data:
         await update.message.reply_text(
             "⚠️ Format laporan belum sesuai.\n\n"
             "Silakan ketik /format untuk melihat contoh pengisian."
@@ -102,7 +102,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if sub_divisi not in ["Patrol", "Operational", "Project"]:
         sub_divisi = "Project"
 
-    kabupaten = data.get("kabupaten", "-")
+    area = data.get("area", "-")
     tikor = data.get("tikor", "-")
     catatan = data.get("catatan", "-")
 
@@ -123,7 +123,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Simpan ke Google Sheet
     row = [
         peristiwa,
-        kabupaten,
+        area,
         tikor,
         catatan,
         username,
@@ -135,7 +135,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = (
         "📌 LAPORAN DITERIMA\n\n"
         f"Peristiwa: {peristiwa}\n"
-        f"Kabupaten: {kabupaten}\n"
+        f"Area: {area}\n"
         f"Tikor: {tikor}\n"
         f"Catatan: {catatan}\n\n"
         "✅ Laporan sudah tercatat di Google Sheet."
