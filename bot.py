@@ -45,9 +45,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     message = (
-        "👋 Selamat datang di Bot Laporan!\n\n"
-        "Bot ini digunakan untuk mengirim laporan evidence "
-        "dan akan otomatis tercatat ke Google Sheet.\n\n"
+        "👋 Selamat datang di Bot Upgrading Evidence!\n\n"
+        "Bot ini digunakan untuk mengirim laporan peristiwa atau aktivitas kerja yang perlu didokumentasikan sebagai evidence"
+        "dan laporan akan otomatis tersimpan ke Google Sheet.\n\n"
         "📋 Untuk melihat format laporan, silakan klik tombol "
         "atau ketik perintah:\n"
         "/format"
@@ -70,12 +70,7 @@ async def format_laporan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Kabupaten:\n"
         "Tikor:\n"
         "Catatan:\n\n"
-        "📌 Contoh:\n"
-        "Peristiwa: FDB rusak\n"
-        "Sub Divisi: Patrol\n"
-        "Area: Denpasar\n"
-        "Tikor: -8.6502,115.2167\n"
-        "Catatan: pintu terbuka"
+        "📌 Sub Divisi: ketik salah satu Patrol / Operational / Project"
     )
 
     await update.message.reply_text(message)
@@ -111,8 +106,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tikor = data.get("tikor", "-")
     catatan = data.get("catatan", "-")
 
-    # Otomatis dari Telegram
-    nama_pengirim = update.message.from_user.full_name
+    # Ambil data Telegram (USERNAME SAJA)
     username = update.message.from_user.username or "-"
     tanggal = update.message.date.strftime("%d/%m/%Y")
 
@@ -127,27 +121,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     # Simpan ke Google Sheet
+    # (Sub Divisi = TAB, bukan kolom)
     row = [
         peristiwa,
-        sub_divisi,
         area,
         tikor,
         catatan,
-        nama_pengirim,
         username,
         tanggal
     ]
     worksheet.append_row(row)
 
-    # Reply ke user
+    # Reply ke user (BERSIH, TANPA IDENTITAS)
     reply = (
         "📌 LAPORAN DITERIMA\n\n"
         f"Peristiwa: {peristiwa}\n"
-        f"Sub Divisi: {sub_divisi}\n"
         f"Kabupaten: {area}\n"
         f"Tikor: {tikor}\n"
-        f"Catatan: {catatan}\n"
-        f"Nama Pengirim: {nama_pengirim}\n\n"
+        f"Catatan: {catatan}\n\n"
         "✅ Laporan sudah tercatat di Google Sheet."
     )
 
