@@ -70,7 +70,7 @@ async def format_laporan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Kabupaten:\n"
         "Tikor:\n"
         "Catatan:\n\n"
-        "📌 Sub Divisi: pilih satu Patrol / Operation / Project\n"
+        "📌 Sub Divisi: pilih satu Patrol / Operational / Project\n"
     )
 
     await update.message.reply_text(message)
