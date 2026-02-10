@@ -46,9 +46,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = (
         "👋 Selamat datang di Bot Upgrading Evidence!\n\n"
-        "Bot ini digunakan untuk mengirim laporan peristiwa atau aktivitas kerja yang perlu didokumentasikan sebagai evidence"
+        "Bot ini digunakan untuk mengirim laporan peristiwa atau aktivitas kerja yang perlu didokumentasikan sebagai evidence\n"
         "dan laporan akan otomatis tersimpan ke Google Sheet.\n\n"
-        "📋 Untuk melihat format laporan, silakan klik tombol "
+        "📋 Untuk melihat format laporan, silakan klik tombol \format"
         "atau ketik perintah:\n"
         "/format"
     )
@@ -66,7 +66,7 @@ async def format_laporan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📋 FORMAT LAPORAN\n\n"
         "Silakan kirim laporan dengan format berikut:\n\n"
         "Peristiwa:\n"
-        "Sub Divisi: Patrol / Operational / Project\n"
+        "Sub Divisi:\n"
         "Kabupaten:\n"
         "Tikor:\n"
         "Catatan:\n\n"
