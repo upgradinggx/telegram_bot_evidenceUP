@@ -45,10 +45,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     message = (
-        "👋 Selamat datang di Bot Upgrading Evidence!\n\n"
-        "Bot ini digunakan untuk mengirim laporan peristiwa atau aktivitas kerja yang perlu didokumentasikan sebagai evidence\n"
-        "dan laporan akan otomatis tersimpan ke Google Sheet.\n\n"
-        "📋 Untuk melihat format laporan, silakan klik tombol \format"
+        "👋 Selamat datang di Bot Laporan!\n\n"
+        "Bot ini digunakan untuk mengirim laporan peristiwa atau "
+        "aktivitas kerja yang perlu didokumentasikan sebagai evidence.\n\n"
+        "📋 Untuk melihat format laporan, silakan klik tombol "
         "atau ketik perintah:\n"
         "/format"
     )
@@ -70,7 +70,7 @@ async def format_laporan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Kabupaten:\n"
         "Tikor:\n"
         "Catatan:\n\n"
-        "📌 Sub Divisi: ketik salah satu Patrol / Operational / Project"
+        "📌 Sub Divisi: pilih satu Patrol / Operation / Project\n"
     )
 
     await update.message.reply_text(message)
@@ -89,7 +89,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             data[key.strip().lower()] = value.strip()
 
     # VALIDASI WAJIB
-    if "peristiwa" not in data or "area" not in data:
+    if "peristiwa" not in data or "kabupaten" not in data:
         await update.message.reply_text(
             "⚠️ Format laporan belum sesuai.\n\n"
             "Silakan ketik /format untuk melihat contoh pengisian."
@@ -102,7 +102,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if sub_divisi not in ["Patrol", "Operational", "Project"]:
         sub_divisi = "Project"
 
-    area = data.get("area", "-")
+    kabupaten = data.get("kabupaten", "-")
     tikor = data.get("tikor", "-")
     catatan = data.get("catatan", "-")
 
@@ -121,10 +121,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     # Simpan ke Google Sheet
-    # (Sub Divisi = TAB, bukan kolom)
     row = [
         peristiwa,
-        area,
+        kabupaten,
         tikor,
         catatan,
         username,
@@ -132,11 +131,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     worksheet.append_row(row)
 
-    # Reply ke user (BERSIH, TANPA IDENTITAS)
+    # Reply ke user (BERSIH)
     reply = (
         "📌 LAPORAN DITERIMA\n\n"
         f"Peristiwa: {peristiwa}\n"
-        f"Kabupaten: {area}\n"
+        f"Kabupaten: {kabupaten}\n"
         f"Tikor: {tikor}\n"
         f"Catatan: {catatan}\n\n"
         "✅ Laporan sudah tercatat di Google Sheet."
